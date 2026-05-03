@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   LayoutDashboard, Bell, Truck, Map, History,
   BarChart3, MessageSquare, Settings, ChevronDown,
   Search, Filter, Plus, AlertTriangle, Clock,
   CheckCircle, Users, TrendingUp, RefreshCw
 } from 'lucide-react';
-import { useAlerts, useMe } from '../hooks/useData';
+import { useAlerts, useAlert, useMe } from '../hooks/useData';
 import { EmergencyAlert } from '../types';
 import AlertMap from './AlertMap';
 import AlertDetailModal from './AlertDetailModal';
@@ -36,13 +36,15 @@ const ALERT_ICON_BG: Record<string, string> = {
 };
 
 // ── Sidebar Nav ───────────────────────────────────────
-const NAV_ITEMS = [
-  { icon: LayoutDashboard, label: 'Tableau de bord', active: true },
-  { icon: Bell, label: 'Alertes', badge: true },
-  { icon: Truck, label: 'Interventions' },
+type DashboardView = 'overview' | 'carte' | 'alerts' | 'interventions' | 'history';
+
+const NAV_ITEMS: Array<{ icon: typeof LayoutDashboard; label: string; viewKey?: DashboardView; badge?: boolean }> = [
+  { icon: LayoutDashboard, label: 'Tableau de bord', viewKey: 'overview' },
+  { icon: Bell, label: 'Alertes', viewKey: 'alerts', badge: true },
+  { icon: Truck, label: 'Interventions', viewKey: 'interventions' },
   { icon: Users, label: 'Agents' },
-  { icon: Map, label: 'Carte' },
-  { icon: History, label: 'Historique' },
+  { icon: Map, label: 'Carte', viewKey: 'carte' },
+  { icon: History, label: 'Historique', viewKey: 'history' },
   { icon: BarChart3, label: 'Statistiques' },
   { icon: MessageSquare, label: 'Messages' },
   { icon: Settings, label: 'Paramètres' },
@@ -104,11 +106,21 @@ const AlertRow: React.FC<AlertRowProps> = ({ alert, onSelect }) => (
 const DashboardLayout: React.FC = () => {
   const [selectedAlert, setSelectedAlert] = useState<EmergencyAlert | null>(null);
   const [detailAlert, setDetailAlert] = useState<EmergencyAlert | null>(null);
+  const [detailModalId, setDetailModalId] = useState<number | null>(null);
   const [detailModalAlert, setDetailModalAlert] = useState<EmergencyAlert | null>(null);
   const [search, setSearch] = useState('');
+  const [activeView, setActiveView] = useState<DashboardView>('overview');
+  const [fullMapOpen, setFullMapOpen] = useState(false);
 
   const { data: alerts = [], isLoading, refetch } = useAlerts();
   const { data: user } = useMe();
+  const { data: detailModalData, isLoading: detailModalLoading } = useAlert(detailModalId ?? undefined);
+
+  useEffect(() => {
+    if (detailModalData) {
+      setDetailModalAlert(detailModalData);
+    }
+  }, [detailModalData]);
 
   // Filtres
   const pendingAlerts = alerts.filter(a => a.statut === 'PENDING');
@@ -117,9 +129,15 @@ const DashboardLayout: React.FC = () => {
   const resolvedAlerts = alerts.filter(a => a.statut === 'RESOLVED');
 
   const filteredAlerts = alerts.filter(a =>
-    a.type_nom.toLowerCase().includes(search.toLowerCase()) ||
-    a.description?.toLowerCase().includes(search.toLowerCase())
+    (a.type_nom || '').toLowerCase().includes(search.toLowerCase()) ||
+    (a.description || '').toLowerCase().includes(search.toLowerCase())
   );
+
+  const mapAlerts = filteredAlerts.filter(a => a.statut !== 'RESOLVED');
+
+  const historyAlerts = alerts
+    .filter(a => ['RESOLVED', 'REJECTED', 'EXPIRED'].includes(a.statut))
+    .sort((a, b) => new Date(b.date_creation).getTime() - new Date(a.date_creation).getTime());
 
   const structureLabel = user?.structure_type === 'POMPIERS' ? 'Sapeurs Pompiers' :
                          user?.structure_type === 'POLICE' ? 'Police Nationale' : 'Structure';
@@ -149,8 +167,10 @@ const DashboardLayout: React.FC = () => {
           {NAV_ITEMS.map((item) => (
             <button
               key={item.label}
+              type="button"
+              onClick={() => item.viewKey && setActiveView(item.viewKey)}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all ${
-                item.active
+                item.viewKey === activeView
                   ? 'bg-rose-600 text-white font-semibold'
                   : 'text-slate-400 hover:text-white hover:bg-slate-800'
               }`}
@@ -222,57 +242,252 @@ const DashboardLayout: React.FC = () => {
         <div className="flex-1 flex overflow-hidden">
           {/* Center Panel */}
           <div className="flex-1 flex flex-col p-4 gap-4 overflow-hidden">
-            {/* KPI Row */}
-            <div className="grid grid-cols-4 gap-3 flex-shrink-0">
-              <KpiCard
-                icon={<Bell size={20} className="text-white" />}
-                iconBg="bg-rose-600"
-                label="Alertes en cours"
-                value={pendingAlerts.length}
-                sub="Voir toutes →"
-              />
-              <KpiCard
-                icon={<Truck size={20} className="text-white" />}
-                iconBg="bg-blue-600"
-                label="Interventions"
-                value={inProgressAlerts.length}
-                sub="En cours"
-              />
-              <KpiCard
-                icon={<CheckCircle size={20} className="text-white" />}
-                iconBg="bg-green-600"
-                label="Résolues"
-                value={resolvedAlerts.length}
-                sub="Ce mois"
-              />
-              <KpiCard
-                icon={<TrendingUp size={20} className="text-white" />}
-                iconBg="bg-orange-500"
-                label="Total alertes"
-                value={alerts.length}
-                sub="Toutes périodes"
-              />
-            </div>
+            <div className="rounded-3xl border border-slate-800 overflow-hidden bg-slate-900/70">
+              <div className="flex flex-wrap gap-2 p-4 border-b border-slate-800">
+                {[
+                  { key: 'overview', label: 'Vue générale' },
+                  { key: 'carte', label: 'Carte' },
+                  { key: 'alerts', label: 'Alertes' },
+                  { key: 'interventions', label: 'Interventions' },
+                  { key: 'history', label: 'Historique' },
+                ].map((tab) => (
+                  <button
+                    key={tab.key}
+                    type="button"
+                    onClick={() => setActiveView(tab.key as DashboardView)}
+                    className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                      activeView === tab.key
+                        ? 'bg-rose-600 text-white'
+                        : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white'
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+              <div className="p-4">
+                {activeView === 'overview' && (
+                  <>
+                    <div className="grid grid-cols-4 gap-3 mb-4">
+                      <KpiCard
+                        icon={<Bell size={20} className="text-white" />}
+                        iconBg="bg-rose-600"
+                        label="Alertes en cours"
+                        value={pendingAlerts.length}
+                        sub="Voir toutes →"
+                        onClick={() => setActiveView('alerts')}
+                      />
+                      <KpiCard
+                        icon={<Truck size={20} className="text-white" />}
+                        iconBg="bg-blue-600"
+                        label="Interventions"
+                        value={inProgressAlerts.length}
+                        sub="En cours"
+                        onClick={() => setActiveView('interventions')}
+                      />
+                      <KpiCard
+                        icon={<CheckCircle size={20} className="text-white" />}
+                        iconBg="bg-green-600"
+                        label="Résolues"
+                        value={resolvedAlerts.length}
+                        sub="Ce mois"
+                        onClick={() => setActiveView('history')}
+                      />
+                      <KpiCard
+                        icon={<TrendingUp size={20} className="text-white" />}
+                        iconBg="bg-orange-500"
+                        label="Total alertes"
+                        value={alerts.length}
+                        sub="Toutes périodes"
+                      />
+                    </div>
+                    <div className="rounded-3xl overflow-hidden border border-slate-700 bg-slate-950/60">
+                      <div className="flex items-center justify-between gap-3 p-4 border-b border-slate-800">
+                        <div>
+                          <p className="text-sm text-slate-400 uppercase tracking-wider">Carte en direct</p>
+                          <p className="text-white font-semibold">Position des alertes actives</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setActiveView('carte');
+                            setFullMapOpen(true);
+                          }}
+                          className="px-4 py-2 rounded-xl bg-rose-600 text-white text-sm font-semibold hover:bg-rose-500 transition-colors"
+                        >
+                          Plein écran carte
+                        </button>
+                      </div>
+                      <div className="h-[420px] bg-slate-950/70">
+                        {isLoading ? (
+                          <div className="w-full h-full flex items-center justify-center bg-slate-800">
+                            <div className="flex flex-col items-center gap-3">
+                              <div className="w-8 h-8 border-2 border-rose-500 border-t-transparent rounded-full animate-spin" />
+                              <p className="text-slate-400 text-sm">Chargement de la carte...</p>
+                            </div>
+                          </div>
+                        ) : (
+                          <AlertMap
+                            alerts={mapAlerts}
+                            selectedAlert={selectedAlert}
+                            onAlertSelect={(alert) => {
+                              setSelectedAlert(alert);
+                              setDetailAlert(alert);
+                            }}
+                          />
+                        )}
+                      </div>
+                    </div>
+                  </>
+                )}
 
-            {/* Map */}
-            <div className="flex-1 rounded-xl overflow-hidden border border-slate-700 min-h-0">
-              {isLoading ? (
-                <div className="w-full h-full flex items-center justify-center bg-slate-800">
-                  <div className="flex flex-col items-center gap-3">
-                    <div className="w-8 h-8 border-2 border-rose-500 border-t-transparent rounded-full animate-spin" />
-                    <p className="text-slate-400 text-sm">Chargement de la carte...</p>
+                {activeView === 'carte' && (
+                  <div className="flex flex-col h-[calc(100vh-180px)] gap-4 min-h-0">
+                    <div className="flex items-center justify-between gap-3 mb-2">
+                      <div>
+                        <p className="text-slate-400 uppercase tracking-wider text-xs">Exploration</p>
+                        <h2 className="text-white text-xl font-semibold">Carte des alertes</h2>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setFullMapOpen(true)}
+                        className="px-4 py-2 rounded-xl bg-rose-600 text-white text-sm font-semibold hover:bg-rose-500 transition-colors"
+                      >
+                        Ouvrir en plein écran
+                      </button>
+                    </div>
+                    <div className="flex-1 rounded-3xl overflow-hidden border border-slate-700 bg-slate-950/80">
+                      {isLoading ? (
+                        <div className="w-full h-full flex items-center justify-center bg-slate-800">
+                          <div className="flex flex-col items-center gap-3">
+                            <div className="w-8 h-8 border-2 border-rose-500 border-t-transparent rounded-full animate-spin" />
+                            <p className="text-slate-400 text-sm">Chargement de la carte...</p>
+                          </div>
+                        </div>
+                      ) : (
+                        <AlertMap
+                          alerts={mapAlerts}
+                          selectedAlert={selectedAlert}
+                          onAlertSelect={(alert) => {
+                            setSelectedAlert(alert);
+                            setDetailAlert(alert);
+                          }}
+                        />
+                      )}
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <AlertMap
-                  alerts={filteredAlerts}
-                  selectedAlert={selectedAlert}
-                  onAlertSelect={(alert) => {
-                    setSelectedAlert(alert);
-                    setDetailAlert(alert);
-                  }}
-                />
-              )}
+                )}
+
+                {activeView === 'alerts' && (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between gap-4">
+                      <div>
+                        <p className="text-slate-400 uppercase tracking-wider text-xs">Alertes</p>
+                        <h2 className="text-white text-xl font-semibold">Liste des alertes</h2>
+                      </div>
+                      <p className="text-slate-500 text-sm">{filteredAlerts.length} alerte(s)</p>
+                    </div>
+                    <div className="rounded-3xl border border-slate-700 bg-slate-950/80 p-3 min-h-[420px] overflow-y-auto">
+                      {filteredAlerts.length === 0 ? (
+                        <div className="text-center py-16 text-slate-500">Aucune alerte ne correspond aux filtres.</div>
+                      ) : (
+                        filteredAlerts.map(alert => (
+                          <AlertRow
+                            key={alert.id}
+                            alert={alert}
+                            onSelect={() => {
+                              setSelectedAlert(alert);
+                              setDetailAlert(alert);
+                            }}
+                          />
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {activeView === 'interventions' && (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between gap-4">
+                      <div>
+                        <p className="text-slate-400 uppercase tracking-wider text-xs">Interventions actives</p>
+                        <h2 className="text-white text-xl font-semibold">Supervision des équipes</h2>
+                      </div>
+                      <p className="text-slate-500 text-sm">{inProgressAlerts.length} intervention(s) en cours</p>
+                    </div>
+                    <div className="rounded-3xl border border-slate-700 bg-slate-950/80 p-3 min-h-[420px] overflow-y-auto space-y-3">
+                      {inProgressAlerts.length === 0 ? (
+                        <div className="text-center py-16 text-slate-500">Aucune intervention active pour le moment.</div>
+                      ) : (
+                        inProgressAlerts.map(alert => (
+                          <div
+                            key={alert.id}
+                            className="flex items-start gap-3 p-3 rounded-2xl border border-slate-800 bg-slate-900 hover:border-slate-700 transition-colors cursor-pointer"
+                            onClick={() => {
+                              setSelectedAlert(alert);
+                              setDetailAlert(alert);
+                            }}
+                          >
+                            <div className="w-11 h-11 rounded-2xl bg-blue-600 flex items-center justify-center text-white">
+                              <Truck size={18} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-white font-semibold truncate">{alert.type_nom || 'Alerte inconnue'}</p>
+                              <p className="text-slate-400 text-sm truncate">{alert.description || 'Pas de description'}</p>
+                              <div className="mt-2 flex items-center gap-2 text-xs text-slate-500">
+                                <span>{alert.statut_label}</span>
+                                <span>•</span>
+                                <span>{timeAgo(alert.date_creation)}</span>
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {activeView === 'history' && (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between gap-4">
+                      <div>
+                        <p className="text-slate-400 uppercase tracking-wider text-xs">Historique des alertes</p>
+                        <h2 className="text-white text-xl font-semibold">Alertes traitées</h2>
+                      </div>
+                      <p className="text-slate-500 text-sm">{historyAlerts.length} éléments</p>
+                    </div>
+                    <div className="rounded-3xl border border-slate-700 bg-slate-950/80 p-3 min-h-[420px] overflow-y-auto space-y-3">
+                      {historyAlerts.length === 0 ? (
+                        <div className="text-center py-16 text-slate-500">Aucun historique disponible.</div>
+                      ) : (
+                        historyAlerts.map(alert => (
+                          <div
+                            key={alert.id}
+                            className="flex items-start gap-3 p-3 rounded-2xl border border-slate-800 bg-slate-900 hover:border-slate-700 transition-colors cursor-pointer"
+                            onClick={() => {
+                              setSelectedAlert(alert);
+                              setDetailAlert(alert);
+                            }}
+                          >
+                            <div className="w-11 h-11 rounded-2xl bg-green-600 flex items-center justify-center text-white">
+                              <CheckCircle size={18} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-white font-semibold truncate">{alert.type_nom || 'Alerte traitée'}</p>
+                              <p className="text-slate-400 text-sm truncate">{alert.description || 'Aucune description'}</p>
+                              <div className="mt-2 flex items-center gap-2 text-xs text-slate-500">
+                                <span>{alert.statut_label}</span>
+                                <span>•</span>
+                                <span>{timeAgo(alert.date_creation)}</span>
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -366,7 +581,12 @@ const DashboardLayout: React.FC = () => {
                     <button
                       type="button"
                       className="w-full px-4 py-2 bg-rose-600 hover:bg-rose-500 rounded-xl text-white text-sm font-semibold transition-colors"
-                      onClick={() => setDetailModalAlert(detailAlert)}
+                      onClick={() => {
+                        if (detailAlert?.id) {
+                          setDetailModalId(detailAlert.id);
+                          setDetailModalAlert(detailAlert);
+                        }
+                      }}
                     >
                       Ouvrir les détails complets
                     </button>
@@ -427,11 +647,43 @@ const DashboardLayout: React.FC = () => {
       </main>
 
       {/* ── MODAL DÉTAIL ─────────────────────────────── */}
-      {detailModalAlert && (
+      {detailModalId && (
         <AlertDetailModal
-          alert={detailModalAlert}
-          onClose={() => setDetailModalAlert(null)}
+          alert={detailModalAlert ?? (selectedAlert ?? detailAlert) as EmergencyAlert}
+          onClose={() => {
+            setDetailModalId(null);
+            setDetailModalAlert(null);
+          }}
+          loading={detailModalLoading}
         />
+      )}
+
+      {fullMapOpen && (
+        <div className="fixed inset-0 z-[80] bg-slate-950/95 backdrop-blur-lg flex flex-col p-4">
+          <div className="flex items-center justify-between gap-3 rounded-3xl border border-slate-700 bg-slate-900/95 p-4">
+            <div>
+              <p className="text-slate-400 text-xs uppercase tracking-wider">Carte</p>
+              <h2 className="text-white text-lg font-semibold">Mode plein écran</h2>
+            </div>
+            <button
+              type="button"
+              onClick={() => setFullMapOpen(false)}
+              className="rounded-xl border border-slate-700 bg-slate-800 px-4 py-2 text-sm text-slate-200 hover:bg-slate-700 hover:text-white transition-colors"
+            >
+              Fermer
+            </button>
+          </div>
+          <div className="mt-4 flex-1 overflow-hidden rounded-3xl border border-slate-700 bg-slate-950">
+            <AlertMap
+              alerts={mapAlerts}
+              selectedAlert={selectedAlert}
+              onAlertSelect={(alert) => {
+                setSelectedAlert(alert);
+                setDetailAlert(alert);
+              }}
+            />
+          </div>
+        </div>
       )}
     </div>
   );

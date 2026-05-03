@@ -12,14 +12,14 @@ export const useAlerts = () =>
     refetchInterval: 30000, // Rafraîchissement auto toutes les 30s
   });
 
-export const useAlert = (id: number) =>
+export const useAlert = (id?: number) =>
   useQuery<EmergencyAlert>({
     queryKey: ['alert', id],
     queryFn: async () => {
-      const { data } = await alertService.getById(id);
+      const { data } = await alertService.getById(id!);
       return data;
     },
-    enabled: !!id,
+    enabled: typeof id === 'number' && id > 0,
   });
 
 export const useAgents = () =>

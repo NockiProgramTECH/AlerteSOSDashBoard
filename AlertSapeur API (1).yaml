@@ -1,0 +1,822 @@
+openapi: 3.0.3
+info:
+  title: AlertSapeur API
+  version: 1.0.0
+  description: API de gestion des alertes d'urgence au Burkina Faso. Permet aux citoyens
+    de signaler des incidents et aux structures (Police, Pompiers, etc.) de gérer
+    les interventions.
+paths:
+  /api/users/alert-types/:
+    get:
+      operationId: users_alert_types_list
+      description: Vue pour lister tous les types d'alertes disponibles (Incendie,
+        Accident, etc.).
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AlertType'
+          description: ''
+  /api/users/alerts/create/:
+    post:
+      operationId: users_alerts_create_create
+      description: Vue pour envoyer une alerte d'urgence.
+      tags:
+      - users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmergencyAlertCreate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EmergencyAlertCreate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EmergencyAlertCreate'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmergencyAlertCreate'
+          description: ''
+  /api/users/alerts/upload-media/:
+    post:
+      operationId: users_alerts_upload_media_create
+      description: Vue pour uploader un média lié à une alerte.
+      tags:
+      - users
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AlertMedia'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AlertMedia'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlertMedia'
+          description: ''
+  /api/users/dashboard/agents/:
+    get:
+      operationId: users_dashboard_agents_list
+      description: Liste les agents de terrain appartenant à la même structure que
+        l'admin.
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AgentSummary'
+          description: ''
+  /api/users/dashboard/alerts/:
+    get:
+      operationId: users_dashboard_alerts_list
+      description: Liste toutes les alertes reçues par la structure de l'admin connecté.
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EmergencyAlertList'
+          description: ''
+  /api/users/dashboard/alerts/{id}/:
+    get:
+      operationId: users_dashboard_alerts_retrieve
+      description: Détails d'une alerte spécifique pour l'admin de structure.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmergencyAlertDetail'
+          description: ''
+  /api/users/dashboard/alerts/{id}/assign/:
+    post:
+      operationId: users_dashboard_alerts_assign_create
+      description: Action pour assigner un agent à une alerte.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AlertAssign'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AlertAssign'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AlertAssign'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlertAssign'
+          description: ''
+  /api/users/login/:
+    post:
+      operationId: users_login_create
+      description: |-
+        Takes a set of user credentials and returns an access and refresh JSON web
+        token pair to prove the authentication of those credentials.
+      tags:
+      - users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPair'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPair'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPair'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenObtainPair'
+          description: ''
+  /api/users/me/:
+    get:
+      operationId: users_me_retrieve
+      description: |-
+        Permet à l'utilisateur connecté de récupérer son propre profil.
+        Utile pour le dashboard pour savoir quel est son rôle et sa structure.
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDetail'
+          description: ''
+  /api/users/register/agent/:
+    post:
+      operationId: users_register_agent_create
+      description: |-
+        Vue pour la création d'un compte agent par un administrateur système.
+        Sécurisée : Uniquement accessible par le staff ou superuser.
+      tags:
+      - users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentCreate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AgentCreate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AgentCreate'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentCreate'
+          description: ''
+  /api/users/register/citizen/:
+    post:
+      operationId: users_register_citizen_create
+      description: |-
+        Vue pour l'inscription d'un nouveau citoyen.
+        Accepte les données multi-part (form-data) pour les images CNIB.
+      tags:
+      - users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRegistration'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserRegistration'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserRegistration'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserRegistration'
+          description: ''
+  /api/users/token/refresh/:
+    post:
+      operationId: users_token_refresh_create
+      description: |-
+        Takes a refresh type JSON web token and returns an access type JSON web
+        token if the refresh token is valid.
+      tags:
+      - users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefresh'
+          description: ''
+components:
+  schemas:
+    AgentCreate:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+          writeOnly: true
+        first_name:
+          type: string
+        last_name:
+          type: string
+        phone_number:
+          type: string
+        email:
+          type: string
+          format: email
+        structure_id:
+          type: integer
+        matricule:
+          type: string
+        grade:
+          type: string
+        fonction:
+          type: string
+      required:
+      - first_name
+      - last_name
+      - matricule
+      - password
+      - phone_number
+      - structure_id
+      - username
+    AgentSummary:
+      type: object
+      description: Version courte pour lister les agents dans le dashboard.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        full_name:
+          type: string
+        matricule:
+          type: string
+        phone_number:
+          type: string
+          nullable: true
+          maxLength: 15
+        role_label:
+          type: string
+      required:
+      - full_name
+      - id
+      - matricule
+      - role_label
+    AlertAssign:
+      type: object
+      description: Valide l'assignation d'un agent à une alerte.
+      properties:
+        agent_id:
+          type: integer
+      required:
+      - agent_id
+    AlertMedia:
+      type: object
+      description: Serializer pour l'upload de médias d'alerte.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        alerte:
+          type: integer
+        file:
+          type: string
+          format: uri
+        media_type:
+          $ref: '#/components/schemas/MediaTypeEnum'
+        date_upload:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - alerte
+      - date_upload
+      - file
+      - id
+      - media_type
+    AlertType:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        nom:
+          type: string
+          maxLength: 100
+        description:
+          type: string
+        default_severity:
+          allOf:
+          - $ref: '#/components/schemas/DefaultSeverityEnum'
+          minimum: -2147483648
+          maximum: 2147483647
+        validity_minutes:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        is_active:
+          type: boolean
+        destinataires:
+          type: array
+          items:
+            type: integer
+      required:
+      - id
+      - nom
+    DefaultSeverityEnum:
+      enum:
+      - 1
+      - 2
+      - 3
+      - 4
+      type: integer
+      description: |-
+        * `1` - Faible
+        * `2` - Moyenne
+        * `3` - Élevée
+        * `4` - Critique
+    EmergencyAlertCreate:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        type_alerte:
+          type: integer
+        location:
+          type: object
+          properties:
+            type:
+              type: string
+              enum:
+              - Point
+            coordinates:
+              type: array
+              items:
+                type: number
+                format: float
+              example:
+              - 12.9721
+              - 77.5933
+              minItems: 2
+              maxItems: 3
+        description:
+          type: string
+        severity:
+          allOf:
+          - $ref: '#/components/schemas/SeverityEnum'
+          minimum: -2147483648
+          maximum: 2147483647
+      required:
+      - id
+      - location
+      - type_alerte
+    EmergencyAlertDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        type_alerte_info:
+          $ref: '#/components/schemas/AlertType'
+        emetteur_info:
+          $ref: '#/components/schemas/UserDetail'
+        agent_assignee_info:
+          $ref: '#/components/schemas/UserDetail'
+        structures_notifiees:
+          type: array
+          items:
+            $ref: '#/components/schemas/EmergencyStructure'
+        location:
+          type: object
+          properties:
+            type:
+              type: string
+              enum:
+              - Point
+            coordinates:
+              type: array
+              items:
+                type: number
+                format: float
+              example:
+              - 12.9721
+              - 77.5933
+              minItems: 2
+              maxItems: 3
+        medias:
+          type: array
+          items:
+            $ref: '#/components/schemas/AlertMedia'
+          readOnly: true
+        description:
+          type: string
+        severity:
+          allOf:
+          - $ref: '#/components/schemas/SeverityEnum'
+          minimum: -2147483648
+          maximum: 2147483647
+        statut:
+          $ref: '#/components/schemas/StatutEnum'
+        date_creation:
+          type: string
+          format: date-time
+          readOnly: true
+        date_debut_traitement:
+          type: string
+          format: date-time
+          nullable: true
+        date_resolution:
+          type: string
+          format: date-time
+          nullable: true
+        commentaire_cloture:
+          type: string
+        emetteur:
+          type: integer
+        type_alerte:
+          type: integer
+        agent_assignee:
+          type: integer
+          nullable: true
+      required:
+      - agent_assignee_info
+      - date_creation
+      - emetteur
+      - emetteur_info
+      - id
+      - location
+      - medias
+      - structures_notifiees
+      - type_alerte
+      - type_alerte_info
+    EmergencyAlertList:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        type_nom:
+          type: string
+        location:
+          type: object
+          properties:
+            type:
+              type: string
+              enum:
+              - Point
+            coordinates:
+              type: array
+              items:
+                type: number
+                format: float
+              example:
+              - 12.9721
+              - 77.5933
+              minItems: 2
+              maxItems: 3
+        severity:
+          allOf:
+          - $ref: '#/components/schemas/SeverityEnum'
+          minimum: -2147483648
+          maximum: 2147483647
+        severity_label:
+          type: string
+        statut:
+          $ref: '#/components/schemas/StatutEnum'
+        statut_label:
+          type: string
+        date_creation:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - date_creation
+      - id
+      - location
+      - severity_label
+      - statut_label
+      - type_nom
+    EmergencyStructure:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        location:
+          type: object
+          properties:
+            type:
+              type: string
+              enum:
+              - Point
+            coordinates:
+              type: array
+              items:
+                type: number
+                format: float
+              example:
+              - 12.9721
+              - 77.5933
+              minItems: 2
+              maxItems: 3
+        nom:
+          type: string
+          maxLength: 100
+        sigle:
+          type: string
+          maxLength: 20
+        type:
+          $ref: '#/components/schemas/TypeEnum'
+        adresse:
+          type: string
+        telephone:
+          type: string
+          maxLength: 15
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        is_active:
+          type: boolean
+      required:
+      - id
+      - location
+      - nom
+      - sigle
+    MediaTypeEnum:
+      enum:
+      - IMAGE
+      - VIDEO
+      - AUDIO
+      type: string
+      description: |-
+        * `IMAGE` - Image
+        * `VIDEO` - Vidéo
+        * `AUDIO` - Audio
+    SeverityEnum:
+      enum:
+      - 1
+      - 2
+      - 3
+      - 4
+      type: integer
+      description: |-
+        * `1` - Faible
+        * `2` - Moyenne
+        * `3` - Élevée
+        * `4` - Critique
+    StatutEnum:
+      enum:
+      - PENDING
+      - ASSIGNED
+      - IN_PROGRESS
+      - RESOLVED
+      - REJECTED
+      - EXPIRED
+      type: string
+      description: |-
+        * `PENDING` - En attente
+        * `ASSIGNED` - Affectée
+        * `IN_PROGRESS` - En cours
+        * `RESOLVED` - Résolue
+        * `REJECTED` - Rejetée
+        * `EXPIRED` - Expirée
+    TokenObtainPair:
+      type: object
+      properties:
+        username:
+          type: string
+          writeOnly: true
+        password:
+          type: string
+          writeOnly: true
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+          readOnly: true
+      required:
+      - access
+      - password
+      - refresh
+      - username
+    TokenRefresh:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+      required:
+      - access
+      - refresh
+    TypeEnum:
+      enum:
+      - POLICE
+      - GENDARMERIE
+      - POMPIERS
+      - AMBULANCE
+      - OTHER
+      type: string
+      description: |-
+        * `POLICE` - Police Nationale
+        * `GENDARMERIE` - Gendarmerie
+        * `POMPIERS` - Sapeurs-Pompiers
+        * `AMBULANCE` - SAMU / Ambulance
+        * `OTHER` - Autre
+    UserDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+          title: Nom d’utilisateur
+          description: Requis. 150 caractères maximum. Uniquement des lettres, nombres
+            et les caractères « @ », « . », « + », « - » et « _ ».
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        first_name:
+          type: string
+          title: Prénom
+          maxLength: 150
+        last_name:
+          type: string
+          title: Nom
+          maxLength: 150
+        phone_number:
+          type: string
+          nullable: true
+          maxLength: 15
+        user_type:
+          $ref: '#/components/schemas/UserTypeEnum'
+        is_verified:
+          type: boolean
+        agent_profile:
+          type: string
+          readOnly: true
+      required:
+      - agent_profile
+      - id
+      - username
+    UserRegistration:
+      type: object
+      description: |-
+        Serializer pour l'inscription des citoyens.
+        Gère la validation du mot de passe, du numéro de téléphone et des images CNIB.
+      properties:
+        username:
+          type: string
+          title: Nom d’utilisateur
+          description: Requis. 150 caractères maximum. Uniquement des lettres, nombres
+            et les caractères « @ », « . », « + », « - » et « _ ».
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        password:
+          type: string
+          writeOnly: true
+          minLength: 8
+        confirm_password:
+          type: string
+          writeOnly: true
+        first_name:
+          type: string
+          title: Prénom
+          maxLength: 150
+        last_name:
+          type: string
+          title: Nom
+          maxLength: 150
+        phone_number:
+          type: string
+          nullable: true
+          maxLength: 15
+        numero_cnib:
+          type: string
+          nullable: true
+          pattern: ^B\d{8,}$
+          maxLength: 20
+        cnib_recto:
+          type: string
+          format: uri
+          nullable: true
+        cnib_verso:
+          type: string
+          format: uri
+          nullable: true
+      required:
+      - cnib_recto
+      - cnib_verso
+      - confirm_password
+      - first_name
+      - last_name
+      - numero_cnib
+      - password
+      - phone_number
+      - username
+    UserTypeEnum:
+      enum:
+      - CITIZEN
+      - AGENT
+      type: string
+      description: |-
+        * `CITIZEN` - Citoyen
+        * `AGENT` - Agent de Secours
+  securitySchemes:
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
