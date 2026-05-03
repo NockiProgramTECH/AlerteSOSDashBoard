@@ -104,6 +104,7 @@ const AlertRow: React.FC<AlertRowProps> = ({ alert, onSelect }) => (
 const DashboardLayout: React.FC = () => {
   const [selectedAlert, setSelectedAlert] = useState<EmergencyAlert | null>(null);
   const [detailAlert, setDetailAlert] = useState<EmergencyAlert | null>(null);
+  const [detailModalAlert, setDetailModalAlert] = useState<EmergencyAlert | null>(null);
   const [search, setSearch] = useState('');
 
   const { data: alerts = [], isLoading, refetch } = useAlerts();
@@ -312,6 +313,72 @@ const DashboardLayout: React.FC = () => {
               </div>
             </div>
 
+            {/* Détail de l'alerte sélectionnée */}
+            <div className="flex-1 flex flex-col overflow-hidden border-b border-slate-800">
+              <div className="flex items-center justify-between px-4 py-3 flex-shrink-0">
+                <h3 className="text-white text-xs font-bold uppercase tracking-wider">
+                  Détails de l'alerte
+                </h3>
+                <button
+                  type="button"
+                  className="text-rose-400 text-xs hover:text-rose-300 transition-colors"
+                  onClick={() => setDetailAlert(null)}
+                >
+                  Fermer
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto px-4 pb-4">
+                {detailAlert ? (
+                  <div className="space-y-4 bg-slate-900 rounded-2xl p-4 border border-slate-700">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-xs text-slate-500 uppercase tracking-wider">Type</p>
+                        <p className="text-white font-semibold">{detailAlert.type_nom}</p>
+                      </div>
+                      <span className={`px-2 py-1 rounded-full text-[11px] font-semibold border ${STATUS_BADGE[detailAlert.statut]}`}>
+                        {detailAlert.statut_label}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <p className="text-slate-500 text-[11px] uppercase tracking-wider">Créée</p>
+                        <p className="text-white">{new Date(detailAlert.date_creation).toLocaleString('fr-FR')}</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-500 text-[11px] uppercase tracking-wider">Coordonnées</p>
+                        <p className="text-white font-mono">{detailAlert.location.coordinates[1].toFixed(4)}, {detailAlert.location.coordinates[0].toFixed(4)}</p>
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-slate-500 text-[11px] uppercase tracking-wider">Description</p>
+                      <p className="text-slate-200 text-sm leading-relaxed">{detailAlert.description || 'Aucune description fournie.'}</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <p className="text-slate-500 text-[11px] uppercase tracking-wider">Sévérité</p>
+                        <p className="text-white">{detailAlert.severity_label || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-500 text-[11px] uppercase tracking-wider">Agent assigné</p>
+                        <p className="text-white">{detailAlert.statut === 'ASSIGNED' ? 'Voir détails' : 'Non assigné'}</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      className="w-full px-4 py-2 bg-rose-600 hover:bg-rose-500 rounded-xl text-white text-sm font-semibold transition-colors"
+                      onClick={() => setDetailModalAlert(detailAlert)}
+                    >
+                      Ouvrir les détails complets
+                    </button>
+                  </div>
+                ) : (
+                  <div className="text-slate-500 text-sm leading-relaxed">
+                    Sélectionnez une alerte dans la carte ou la liste pour afficher ses détails ici.
+                  </div>
+                )}
+              </div>
+            </div>
+
             {/* Interventions en cours */}
             <div className="flex-1 flex flex-col overflow-hidden">
               <div className="flex items-center justify-between px-4 py-3 flex-shrink-0">
@@ -360,10 +427,10 @@ const DashboardLayout: React.FC = () => {
       </main>
 
       {/* ── MODAL DÉTAIL ─────────────────────────────── */}
-      {detailAlert && (
+      {detailModalAlert && (
         <AlertDetailModal
-          alert={detailAlert}
-          onClose={() => setDetailAlert(null)}
+          alert={detailModalAlert}
+          onClose={() => setDetailModalAlert(null)}
         />
       )}
     </div>

@@ -29,6 +29,16 @@ const AlertMap: React.FC<AlertMapProps> = ({
   const mapInstanceRef = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
 
+  const getLatLng = (coords: number[]) => {
+    if (!coords || coords.length !== 2) return null;
+    let [lon, lat] = coords;
+    if (Math.abs(lat) > 90 && Math.abs(lon) <= 90) {
+      [lat, lon] = [lon, lat];
+    }
+    if (Math.abs(lat) > 90 || Math.abs(lon) > 180) return null;
+    return { lat, lon };
+  };
+
   useEffect(() => {
     // Import dynamique de Leaflet (évite les erreurs SSR)
     const initMap = async () => {
@@ -80,8 +90,14 @@ const AlertMap: React.FC<AlertMapProps> = ({
       markersRef.current.forEach((m: any) => m.remove());
       markersRef.current = [];
 
+      const markerBounds: any[] = [];
+
       alerts.forEach((alert: any) => {
-        const [lon, lat] = alert.location.coordinates;
+        const coords = getLatLng(alert.location.coordinates);
+        if (!coords) return;
+
+        const { lat, lon } = coords;
+        markerBounds.push([lat, lon]);
         const color = STATUS_COLORS[alert.statut] || '#E11D48';
         const isPending = alert.statut === 'PENDING';
         const isSelected = selectedAlert?.id === alert.id;
@@ -128,10 +144,18 @@ const AlertMap: React.FC<AlertMapProps> = ({
         markersRef.current.push(marker);
       });
 
-      // Centrer sur alerte sélectionnée
-      if (selectedAlert) {
-        const [lon, lat] = selectedAlert.location.coordinates;
-        map.flyTo([lat, lon], 15, { animate: true, duration: 1 });
+      if (markerBounds.length > 0) {
+        const bounds = L.latLngBounds(markerBounds);
+        if (selectedAlert) {
+          const coords = getLatLng(selectedAlert.location.coordinates);
+          if (coords) {
+            map.flyTo([coords.lat, coords.lon], 15, { animate: true, duration: 1 });
+          } else {
+            map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+          }
+        } else {
+          map.fitBounds(bounds, { padding: [50, 50], maxZoom: 13 });
+        }
       }
     };
 
