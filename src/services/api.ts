@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const BASE_URL = 'https://alertesos.onrender.com';
+const BASE_URL = "https://alertesos.onrender.com";
 
 // Instance Axios principale avec intercepteur JWT
 export const api = axios.create({
