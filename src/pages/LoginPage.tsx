@@ -33,10 +33,10 @@ const LoginPage: React.FC = () => {
         {/* Logo */}
         <div className="flex items-center justify-center gap-3 mb-8">
           <div className="w-12 h-12 bg-rose-600 rounded-xl flex items-center justify-center">
-            <AlertTriangle size={24} className="text-white" />
+            <AlertTriangle size={27} className="text-white" />
           </div>
           <div>
-            <p className="text-white font-bold text-2xl leading-none">ALERT<span className="text-rose-400">SAPEUR</span></p>
+            <p className="text-white font-bold text-2xl leading-none">ALERT<span className="text-rose-400">URGENCE</span></p>
             <p className="text-slate-500 text-xs">Système de gestion d'urgences</p>
           </div>
         </div>
@@ -93,7 +93,7 @@ const LoginPage: React.FC = () => {
         </div>
 
         <p className="text-center text-slate-600 text-xs mt-6">
-          AlertSapeur © 2025 — Burkina Faso
+          AlertUrgence © 2026 — Burkina Faso
         </p>
       </div>
     </div>

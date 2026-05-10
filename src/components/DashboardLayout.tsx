@@ -139,8 +139,12 @@ const DashboardLayout: React.FC = () => {
     .filter(a => ['RESOLVED', 'REJECTED', 'EXPIRED'].includes(a.statut))
     .sort((a, b) => new Date(b.date_creation).getTime() - new Date(a.date_creation).getTime());
 
-  const structureLabel = user?.structure_type === 'POMPIERS' ? 'Sapeurs Pompiers' :
-                         user?.structure_type === 'POLICE' ? 'Police Nationale' : 'Structure';
+  // TODO :
+        // corriger l'api pour quellle renvoi le nom et nom le sigle
+ 
+  const structureLabel = user?.agent_profile.structure  
+  // const structureLabel = user?.agent_profile.structure=== 'PN' ? 'POLICE Nationale' :
+  //                        user?.structure_type === 'POLICE' ? 'Police Nationale' : 'Structure';
 
   return (
     <div className="flex h-screen bg-slate-950 text-white overflow-hidden font-sans">
@@ -154,7 +158,7 @@ const DashboardLayout: React.FC = () => {
             </div>
             <div>
               <p className="text-white font-bold text-sm leading-none">ALERT</p>
-              <p className="text-rose-400 font-bold text-sm leading-none">SAPEUR</p>
+              <p className="text-rose-400 font-bold text-sm leading-none">URGENCE</p>
             </div>
           </div>
           {user && (
@@ -193,8 +197,8 @@ const DashboardLayout: React.FC = () => {
               {user?.full_name?.charAt(0) || 'D'}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-white text-xs font-semibold truncate">{user?.full_name || 'Dispatcher'}</p>
-              <p className="text-slate-500 text-xs">Dispatcher</p>
+              <p className="text-white text-xs font-semibold truncate">{user?.first_name || 'Dispatcher'} {user?.last_name || "..."}</p>
+              <p className="text-slate-500 text-xs">{user?.user_type || "Agent"}</p>
             </div>
             <ChevronDown size={14} className="text-slate-500" />
           </div>
@@ -250,6 +254,8 @@ const DashboardLayout: React.FC = () => {
                   { key: 'alerts', label: 'Alertes' },
                   { key: 'interventions', label: 'Interventions' },
                   { key: 'history', label: 'Historique' },
+                  {key:"agents",label:'Agents'},
+                  
                 ].map((tab) => (
                   <button
                     key={tab.key}

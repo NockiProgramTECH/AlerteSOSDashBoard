@@ -15,6 +15,8 @@ export interface UserInfo {
   first_name?: string;
   last_name?: string;
   full_name?: string;
+  numero_cnib?:string;
+  
 }
 
 export interface EmergencyAlert {
@@ -44,14 +46,24 @@ export interface Agent {
   phone_number: string;
   role_label: string;
 }
+export interface AgentProfile{
+  matricule:string;
+  structure:string;
+  role:string;
+  
+
+}
 
 export interface UserProfile {
   id: number;
   full_name: string;
+  last_name:string;
+  first_name:string;
   email: string;
-  role: 'DISPATCHER' | 'AGENT' | 'CITIZEN';
+  user_type: 'DISPATCHER' | 'AGENT' | 'CITIZEN';
   structure_nom: string;
   structure_type: 'POLICE' | 'POMPIERS' | 'SAMU';
+  agent_profile:AgentProfile;
 }
 
 export interface DashboardStats {

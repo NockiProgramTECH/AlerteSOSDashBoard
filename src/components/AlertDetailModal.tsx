@@ -31,10 +31,12 @@ const AlertDetailModal: React.FC<AlertDetailModalProps> = ({
 
   const statusCfg = STATUS_CONFIG[alert.statut as keyof typeof STATUS_CONFIG] || STATUS_CONFIG.PENDING;
   const typeName = alert.type_nom || alert.type_alerte_info?.nom || 'Alerte';
-  const senderName = alert.emetteur_info?.username
-    || [alert.emetteur_info?.first_name, alert.emetteur_info?.last_name].filter(Boolean).join(' ')
+  const senderName =`${alert.emetteur_info?.first_name} ${alert.emetteur_info?.last_name}`
+    
+  || [alert.emetteur_info?.first_name, alert.emetteur_info?.last_name].filter(Boolean).join(' ')
     || alert.emetteur_info?.full_name
     || `ID ${alert.emetteur ?? 'inconnu'}`;
+    const senderCNIB =alert.emetteur_info?.numero_cnib?.toUpperCase()
   const medias = alert.medias ?? [];
   const images = medias.filter((m: any) => m.media_type === 'IMAGE');
   const videos = medias.filter((m: any) => m.media_type === 'VIDEO');
@@ -126,6 +128,7 @@ const AlertDetailModal: React.FC<AlertDetailModalProps> = ({
           <div className="bg-slate-800 rounded-xl p-4">
             <p className="text-xs text-slate-500 mb-1">Émetteur</p>
             <p className="text-sm text-slate-200">{senderName}</p>
+             <p className="text-sm text-slate-200">N°CNIB:{senderCNIB}</p>
           </div>
 
           {/* Description */}
