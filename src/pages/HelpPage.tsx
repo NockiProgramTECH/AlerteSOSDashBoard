@@ -54,7 +54,9 @@ const HelpPage: React.FC = () => {
               Téléchargez l'application mobile pour signaler des incidents instantanément avec votre position GPS, des photos et des vidéos.
             </p>
             <a
-              href="https://alertesos.onrender.com/download/app-debug.apk"
+              href="https://raw.githubusercontent.com/NockiProgramTECH/AlerteSOSMobile/main/AlerteSOS.apk"
+              download 
+
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-3 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-colors"
