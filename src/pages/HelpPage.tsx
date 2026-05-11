@@ -78,11 +78,11 @@ const HelpPage: React.FC = () => {
               <div className="bg-slate-950 rounded-xl p-4 space-y-2 border border-slate-800">
                 <div className="flex justify-between text-sm">
                   <span className="text-slate-500">Utilisateur:</span>
-                  <span className="text-emerald-400 font-mono">admin_pompier</span>
+                  <span className="text-emerald-400 font-mono">admin</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-slate-500">Mot de passe:</span>
-                  <span className="text-emerald-400 font-mono">pompier2026</span>
+                  <span className="text-emerald-400 font-mono">1234</span>
                 </div>
               </div>
             </section>
