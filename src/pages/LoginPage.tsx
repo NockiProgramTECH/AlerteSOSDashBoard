@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AlertTriangle, Eye, EyeOff } from 'lucide-react';
+import { AlertTriangle, Eye, EyeOff, HelpCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '../services/api';
 import toast from 'react-hot-toast';
@@ -36,7 +36,7 @@ const LoginPage: React.FC = () => {
             <AlertTriangle size={27} className="text-white" />
           </div>
           <div>
-            <p className="text-white font-bold text-2xl leading-none">ALERT<span className="text-rose-400">URGENCE</span></p>
+            <p className="text-white font-bold text-2xl leading-none">SOS<span className="text-rose-400">ALERTE</span></p>
             <p className="text-slate-500 text-xs">Système de gestion d'urgences</p>
           </div>
         </div>
@@ -90,10 +90,20 @@ const LoginPage: React.FC = () => {
               {loading ? 'Connexion...' : 'Se connecter'}
             </button>
           </form>
+
+          <div className="mt-6 pt-6 border-t border-slate-800">
+            <button
+              onClick={() => navigate('/help')}
+              className="w-full py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-semibold rounded-xl transition-all flex items-center justify-center gap-2"
+            >
+              <HelpCircle size={18} />
+              Comment utiliser le projet ?
+            </button>
+          </div>
         </div>
 
         <p className="text-center text-slate-600 text-xs mt-6">
-          AlertUrgence © 2026 — Burkina Faso
+          SOSAlerte © 2026 — Burkina Faso
         </p>
       </div>
     </div>

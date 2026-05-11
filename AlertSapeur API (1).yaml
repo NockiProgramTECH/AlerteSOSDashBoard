@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: AlertSapeur API
+  title: SOSAlerte API
   version: 1.0.0
   description: API de gestion des alertes d'urgence au Burkina Faso. Permet aux citoyens
     de signaler des incidents et aux structures (Police, Pompiers, etc.) de gérer

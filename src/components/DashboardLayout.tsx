@@ -157,8 +157,8 @@ const DashboardLayout: React.FC = () => {
               <AlertTriangle size={20} className="text-white" />
             </div>
             <div>
-              <p className="text-white font-bold text-sm leading-none">ALERT</p>
-              <p className="text-rose-400 font-bold text-sm leading-none">URGENCE</p>
+              <p className="text-white font-bold text-sm leading-none">SOS</p>
+              <p className="text-rose-400 font-bold text-sm leading-none">ALERTE</p>
             </div>
           </div>
           {user && (
